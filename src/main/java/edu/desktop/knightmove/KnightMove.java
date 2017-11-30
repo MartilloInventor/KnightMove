@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Vector;
-
+// these imports make in possible to use simpler identifiers
 import static edu.desktop.knightmove.OneCoordinate.horizontal.left;
 import static edu.desktop.knightmove.OneCoordinate.horizontal.right;
 import static edu.desktop.knightmove.OneCoordinate.vertical.down;
@@ -25,7 +25,7 @@ import static edu.desktop.knightmove.OneCoordinate.vertical.up;
 // The constructor does everything for output.
 
 // JTextArea has been deprecated since I developed this simple popup.
-// I will fix this later.
+// I will fix this later. This logic should also work for scala and clojure.
 
 class mapListGUI extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -65,13 +65,14 @@ class mapListGUI extends JPanel {
     }
 }
 
-// This problem could be done as pure initialization because the total calculation is
-// so small
+/*
+This problem could be done as pure initialization because the total calculation is
+so small key presses have coordinates and allowed/illegal next keypresses
 
-// key presses have coordinates and allowed/illegal next keypresses
+controlling access: https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html
 
-// controlling access: https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html
-// trying to use access correctly
+trying to use access correctly
+*/
 
 class OneCoordinate {
     // adding the symbolic statics makes it less likely to mix up row and column
@@ -81,19 +82,17 @@ class OneCoordinate {
     static final private int firstCol = 0; // col is x coordinate
     static final private int lastCol = 4;
 
-    int row = 0;
+    int row = 0; // I should probably add setters and getters
     int col = 0;
     char letter = '\0';
     boolean vowelletter = false;
     boolean alpha = false;
 
-    // this enums can be used in arithmetic --
-    // actually the getter -- and
     // I don't have to worry about bad values
-    // unfortunately only the first type can
-    // be assigned an initial value, and the
-    // following types are then sequential --
-    // something I don't want
+    // unfortunately only the first can
+    // be assigned (via "=") an initial integer
+    // value, and the following are then
+    // sequential -- something I don't want
 
     // the enums as defined below act almost
     // like single instance objects.
@@ -137,6 +136,8 @@ class OneCoordinate {
     // checks for legality relative to various counters in KnightMove class.
     // first two steps, then 1
     // rows are up & down, cols are right & left
+
+    // together getStep1(), getStep2(), getStep3() constitute one knight move
 
     OneCoordinate getStep1(horizontal colmovetype, vertical rowmovetype, boolean verticalfirst) {
         OneCoordinate step1 = null;
@@ -188,6 +189,7 @@ class OneCoordinate {
         return step1;
     }
 
+    // getStep1() is always executed before getStep2() -- don't need to perform check again
     OneCoordinate getStep2(horizontal colmovetype, vertical rowmovetype, boolean verticalfirst) {
         OneCoordinate step2 = null;
         int colmove = colmovetype.getValue();
@@ -202,6 +204,7 @@ class OneCoordinate {
 
     }
 
+    // getStep2() is always executed before getStep3() -- don't need to perform check again
     OneCoordinate getStep3(horizontal colmovetype, vertical rowmovetype, boolean verticlefirst) {
         OneCoordinate step3 = null;
         int colmove = colmovetype.getValue();
@@ -215,6 +218,7 @@ class OneCoordinate {
         return step3;
     }
 
+    // so that I don't need to duplicate statement for each step
     void incVowels() {
         // trick to treat true==1 and false==0
         // How would you make true==0 and false==1?
@@ -223,6 +227,7 @@ class OneCoordinate {
 
     // will this step mean a wrap?
     // at least this is how I interpret the wrap condition
+    // sequences only have each alphanumeric once
     boolean testInstance() {
         if (alpha) {
             if ((KnightMove.letterinstancearray[KnightMove.keyPad[row][col] - 'A'] + 1) > 1)
@@ -242,7 +247,7 @@ class OneCoordinate {
         return;
     }
 
-
+    // vertHorz() is a knight move -- it fails if constraints are not met
     OneCoordinate vertHorz(horizontal colmovetype, vertical rowmovetype, boolean verticalfirst) {
         // could use temp0-3 but less clear
         OneCoordinate step1 = null;
@@ -286,7 +291,7 @@ class OneCoordinate {
         return step3;
     }
 
-
+    // Is this self-documenting code? Prime Computer loved self-documenting code.
     OneCoordinate rightUp() { //1
         return vertHorz( right, up, false );
     }
@@ -413,13 +418,14 @@ public final class KnightMove {
                 return false;
         }
     }
-
+    // internally only use capitals
     static boolean alpha(char letter) {
         if (('A' <= letter) && (letter <= 'O'))
             return true;
         return false;
     }
 
+    // descending in search for valid knight move
     static void addCoordinateListToKnightMoveList() {
         Iterator<OneCoordinate> ocitrt = coordinateList.iterator();
         String moves = "";
@@ -431,6 +437,7 @@ public final class KnightMove {
 
     }
 
+    // used when backing up in the depth first search
     static void undoCounts(OneCoordinate coord) {
         if (coord.vowelletter) {
             if ((--KnightMove.numvowels) < 0) {
@@ -451,6 +458,9 @@ public final class KnightMove {
         }
     }
 
+    // descend and backup
+    // we use PH Winston's book entitled Artifical Intelligence in AI course, which I taught
+    // https://books.google.com/books/about/Artificial_Intelligence.html?id=b4owngEACAAJ
     static void addCoordinateSequence(OneCoordinate coord, OneCoordinate nextcoord, int numknightmoves,
                                       OneCoordinate.horizontal colmove, OneCoordinate.vertical rowmove, boolean verticalfirst) {
         // coord should already be added
